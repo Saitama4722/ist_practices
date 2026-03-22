@@ -1,0 +1,591 @@
+=== Cell 25 code ===
+# ╨Я╨░╤А╨░╨╝╨╡╤В╤А ╨╜╨╡╤З╤С╤В╨║╨╛╤Б╤В╨╕
+FCM_M = 2.0
+
+# ╨б╨┐╨╕╤Б╨╛╨║ ╨┤╨╗╤П ╨╜╨░╨║╨╛╨┐╨╗╨╡╨╜╨╕╤П ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓ ╨╜╨╡╤З╤С╤В╨║╨╛╨╣ ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕
+fcm_results = []
+
+print(f'╨Я╤А╨╕╨╝╨╡╨╜╨╡╨╜╨╕╨╡ Fuzzy c-means (m={FCM_M}) ╨┤╨╗╤П c = 2..10')
+print(f"{'c':<5} {'Silhouette':<14} {'ARI':<12}")
+print('-' * 33)
+
+# ╨в╤А╨░╨╜╤Б╨┐╨╛╨╜╨╕╤А╨╛╨▓╨░╨╜╨╕╨╡ ╨╝╨░╤В╤А╨╕╤Ж╤Л ╨┤╨░╨╜╨╜╤Л╤Е: skfuzzy.cmeans ╨╛╨╢╨╕╨┤╨░╨╡╤В ╤Д╨╛╤А╨╝╤Г (n_features, n_samples)
+X_fcm = X_scaled.T
+
+for c in range(2, 11):
+    # ╨Я╤А╨╕╨╝╨╡╨╜╨╡╨╜╨╕╨╡ ╨░╨╗╨│╨╛╤А╨╕╤В╨╝╨░ Fuzzy c-means
+    cntr, u_matrix, _, _, _, _, _ = fuzz.cluster.cmeans(
+        X_fcm, c=c, m=FCM_M, error=1e-6, maxiter=1000, seed=RANDOM_STATE
+    )
+
+    # ╨Ц╤С╤Б╤В╨║╨╕╨╡ ╨╝╨╡╤В╨║╨╕: ╨║╨╗╨░╤Б╤В╨╡╤А ╤Б ╨╝╨░╨║╤Б╨╕╨╝╨░╨╗╤М╨╜╨╛╨╣ ╤Б╤В╨╡╨┐╨╡╨╜╤М╤О ╨┐╤А╨╕╨╜╨░╨┤╨╗╨╡╨╢╨╜╨╛╤Б╤В╨╕
+    fcm_labels = np.argmax(u_matrix, axis=0)
+
+    # ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨╕╨╜╨┤╨╡╨║╤Б╨░ ╤Б╨╕╨╗╤Г╤Н╤В╨░ ╨┐╨╛ ╨╢╤С╤Б╤В╨║╨╕╨╝ ╨╝╨╡╤В╨║╨░╨╝
+    sil = silhouette_score(X_scaled, fcm_labels)
+
+    # ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ARI (╨▓╨╜╨╡╤И╨╜╤П╤П ╨╝╨╡╤В╤А╨╕╨║╨░)
+    ari = adjusted_rand_score(y_true, fcm_labels)
+
+    fcm_results.append({
+        'c': c,
+        'Silhouette': round(sil, 4),
+        'ARI': round(ari, 4)
+    })
+    print(f'{c:<5} {sil:<14.4f} {ari:<12.4f}')
+
+# ╨Я╤А╨╡╨╛╨▒╤А╨░╨╖╨╛╨▓╨░╨╜╨╕╨╡ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓ ╨▓ DataFrame
+df_fcm = pd.DataFrame(fcm_results)
+
+print('\n╨в╨░╨▒╨╗╨╕╤Ж╨░ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓ Fuzzy c-means:')
+display(df_fcm.reset_index(drop=True))
+
+
+=== Cell 26 code ===
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 1: Silhouette vs c тФАтФА
+ax1 = axes[0]
+ax1.plot(df_fcm['c'], df_fcm['Silhouette'],
+         marker='o', linewidth=2, markersize=8, color='#9467bd')
+best_fcm_idx = df_fcm['Silhouette'].idxmax()
+best_c_fcm = int(df_fcm.loc[best_fcm_idx, 'c'])
+best_sil_fcm = df_fcm.loc[best_fcm_idx, 'Silhouette']
+ax1.scatter([best_c_fcm], [best_sil_fcm],
+            color='red', zorder=5, s=120, label=f'╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ c={best_c_fcm}')
+ax1.set_title('Fuzzy c-means: Silhouette vs. c', fontsize=13, fontweight='bold')
+ax1.set_xlabel('╨з╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ c', fontsize=11)
+ax1.set_ylabel('Silhouette Score', fontsize=11)
+ax1.set_xticks(range(2, 11))
+ax1.legend(fontsize=10)
+ax1.grid(alpha=0.4)
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 2: ARI vs c тФАтФА
+ax2 = axes[1]
+ax2.plot(df_fcm['c'], df_fcm['ARI'],
+         marker='s', linewidth=2, markersize=8, color='#8c564b')
+ax2.set_title('Fuzzy c-means: ARI vs. c', fontsize=13, fontweight='bold')
+ax2.set_xlabel('╨з╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ c', fontsize=11)
+ax2.set_ylabel('Adjusted Rand Index (ARI)', fontsize=11)
+ax2.set_xticks(range(2, 11))
+ax2.grid(alpha=0.4)
+
+plt.suptitle('╨Ю╤Ж╨╡╨╜╨║╨░ ╨║╨░╤З╨╡╤Б╤В╨▓╨░ ╨╜╨╡╤З╤С╤В╨║╨╛╨╣ ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ Fuzzy c-means',
+             fontsize=14, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.savefig('fcm_metrics.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+print(f'╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ ╨┐╨╛ ╨╕╨╜╨┤╨╡╨║╤Б╤Г ╤Б╨╕╨╗╤Г╤Н╤В╨░: c = {best_c_fcm}')
+
+# ╨Ю╨▒╤Г╤З╨╡╨╜╨╕╨╡ ╨╗╤Г╤З╤И╨╡╨╣ ╨╝╨╛╨┤╨╡╨╗╨╕ FCM
+cntr_best, u_best, _, _, _, _, _ = fuzz.cluster.cmeans(
+    X_fcm, c=best_c_fcm, m=FCM_M, error=1e-6, maxiter=1000, seed=RANDOM_STATE
+)
+fcm_labels_best = np.argmax(u_best, axis=0)
+
+# ╨а╨░╨╖╨╝╨╡╤А╤Л ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓
+fcm_cluster_counts = pd.Series(fcm_labels_best).value_counts().sort_index()
+print(f'\n╨а╨░╤Б╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨╕╨╡ ╨╛╨▒╤К╨╡╨║╤В╨╛╨▓ ╨┐╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨░╨╝ (c={best_c_fcm}):')
+for cid, cnt in fcm_cluster_counts.items():
+    print(f'  ╨Ъ╨╗╨░╤Б╤В╨╡╤А {cid}: {cnt} ╨╛╨▒╤К╨╡╨║╤В╨╛╨▓ ({cnt/len(fcm_labels_best)*100:.1f}%)')
+
+print(f'\nSilhouette Score: {silhouette_score(X_scaled, fcm_labels_best):.4f}')
+print(f'ARI:              {adjusted_rand_score(y_true, fcm_labels_best):.4f}')
+
+
+=== Cell 33 code ===
+import time
+
+# ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ t-SNE ╨╛╨┤╨╕╨╜ ╤А╨░╨╖ ╨┤╨╗╤П ╨┐╨╡╤А╨╡╨╕╤Б╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╨╜╨╕╤П ╨▓╨╛ ╨▓╤Б╨╡╤Е ╨┐╨╛╨┤╨│╤А╨░╤Д╨╕╨║╨░╤Е
+print('╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ t-SNE (╨┐╨╡╤А╨┐╨╗╨╡╨║╤Б╨╕╤П=30, ╨╕╤В╨╡╤А╨░╤Ж╨╕╨╣=1000)...')
+tsne_model = TSNE(n_components=2, perplexity=30, n_iter=1000,
+                  random_state=RANDOM_STATE, learning_rate='auto', init='pca')
+X_tsne = tsne_model.fit_transform(X_scaled)
+print(f't-SNE ╨╖╨░╨▓╨╡╤А╤И╤С╨╜: ╤Д╨╛╤А╨╝╨░ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ {X_tsne.shape}')
+
+# ╨ж╨▓╨╡╤В╨╛╨▓╨░╤П ╨┐╨░╨╗╨╕╤В╤А╨░ ╨┤╨╗╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓
+PALETTE = 'tab10'
+
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+fig.suptitle('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨╝╨╡╤В╨╛╨┤╨╛╨╝ t-SNE',
+             fontsize=16, fontweight='bold', y=1.01)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 1: ╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П тФАтФА
+ax = axes[0, 0]
+unique_hier = sorted(set(hier_labels))
+colors_hier = plt.cm.get_cmap(PALETTE, len(unique_hier))
+for i, lbl in enumerate(unique_hier):
+    mask = hier_labels == lbl
+    ax.scatter(X_tsne[mask, 0], X_tsne[mask, 1],
+               c=[colors_hier(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П\n(linkage={BEST_LINKAGE}, k={BEST_K_HIER})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 2: K-Means ╤Б ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤╨░╨╝╨╕ тФАтФА
+ax = axes[0, 1]
+unique_km = sorted(set(km_labels_best))
+colors_km = plt.cm.get_cmap(PALETTE, len(unique_km))
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    ax.scatter(X_tsne[mask, 0], X_tsne[mask, 1],
+               c=[colors_km(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+# ╨ж╨╡╨╜╤В╤А╨╛╨╕╨┤╤Л ╨▓ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨╡ t-SNE тАФ ╨▓╤Л╤З╨╕╤Б╨╗╤П╤О╤В╤Б╤П ╨║╨░╨║ ╤Б╤А╨╡╨┤╨╜╨╡╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤В╨╛╤З╨╡╨║ ╨║╨╗╨░╤Б╤В╨╡╤А╨░
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    cx = X_tsne[mask, 0].mean()
+    cy = X_tsne[mask, 1].mean()
+    ax.scatter(cx, cy, marker='*', s=300, c=[colors_km(i)],
+               edgecolors='black', linewidths=0.8, zorder=10)
+ax.set_title(f'K-Means (k={best_k_km}, тШЕ тАФ ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤)',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 3: Fuzzy c-means тФАтФА
+ax = axes[1, 0]
+unique_fcm = sorted(set(fcm_labels_best))
+colors_fcm = plt.cm.get_cmap(PALETTE, len(unique_fcm))
+for i, lbl in enumerate(unique_fcm):
+    mask = fcm_labels_best == lbl
+    ax.scatter(X_tsne[mask, 0], X_tsne[mask, 1],
+               c=[colors_fcm(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'Fuzzy c-means (c={best_c_fcm})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 4: DBSCAN (╤И╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕ тАФ ╤З╤С╤А╨╜╤Л╨╣ ├Ч) тФАтФА
+ax = axes[1, 1]
+unique_db = sorted(set(db_labels_best))
+db_cluster_labels = [l for l in unique_db if l != -1]
+colors_db = plt.cm.get_cmap(PALETTE, max(len(db_cluster_labels), 1))
+for i, lbl in enumerate(db_cluster_labels):
+    mask = db_labels_best == lbl
+    ax.scatter(X_tsne[mask, 0], X_tsne[mask, 1],
+               c=[colors_db(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+# ╨и╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕ тАФ ╤З╤С╤А╨╜╤Л╨╣ ╤Ж╨▓╨╡╤В, ╨╝╨░╤А╨║╨╡╤А ├Ч
+if -1 in unique_db:
+    mask_noise = db_labels_best == -1
+    ax.scatter(X_tsne[mask_noise, 0], X_tsne[mask_noise, 1],
+               c='black', s=20, alpha=0.5, marker='x', label='╨и╤Г╨╝ (тИТ1)')
+n_db_clusters = len(db_cluster_labels)
+ax.set_title(f'DBSCAN (eps={best_eps}, min_samples={best_min_s})\n'
+             f'╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╛╨▓: {n_db_clusters}, ├Ч тАФ ╤И╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('t-SNE ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('viz_tsne.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П t-SNE ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨▓ viz_tsne.png')
+
+=== Cell 34 code ===
+# ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ UMAP
+print('╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ UMAP (n_neighbors=15, min_dist=0.1)...')
+umap_model = umap.UMAP(n_components=2, n_neighbors=15, min_dist=0.1,
+                       random_state=RANDOM_STATE)
+X_umap = umap_model.fit_transform(X_scaled)
+print(f'UMAP ╨╖╨░╨▓╨╡╤А╤И╤С╨╜: ╤Д╨╛╤А╨╝╨░ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ {X_umap.shape}')
+
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+fig.suptitle('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨╝╨╡╤В╨╛╨┤╨╛╨╝ UMAP',
+             fontsize=16, fontweight='bold', y=1.01)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 1: ╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П тФАтФА
+ax = axes[0, 0]
+unique_hier = sorted(set(hier_labels))
+colors_hier = plt.cm.get_cmap(PALETTE, len(unique_hier))
+for i, lbl in enumerate(unique_hier):
+    mask = hier_labels == lbl
+    ax.scatter(X_umap[mask, 0], X_umap[mask, 1],
+               c=[colors_hier(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П\n(linkage={BEST_LINKAGE}, k={BEST_K_HIER})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 2: K-Means ╤Б ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤╨░╨╝╨╕ тФАтФА
+ax = axes[0, 1]
+unique_km = sorted(set(km_labels_best))
+colors_km = plt.cm.get_cmap(PALETTE, len(unique_km))
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    ax.scatter(X_umap[mask, 0], X_umap[mask, 1],
+               c=[colors_km(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+# ╨ж╨╡╨╜╤В╤А╨╛╨╕╨┤╤Л ╨▓ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨╡ UMAP тАФ ╨┐╤А╨╛╨╡╤Ж╨╕╤А╤Г╨╡╨╝ ╨╕╤Б╤Е╨╛╨┤╨╜╤Л╨╡ ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤╤Л ╤З╨╡╤А╨╡╨╖ ╨╛╨▒╤Г╤З╨╡╨╜╨╜╤Г╤О ╨╝╨╛╨┤╨╡╨╗╤М
+centroids_umap = umap_model.transform(centroids)
+for i, lbl in enumerate(unique_km):
+    ax.scatter(centroids_umap[lbl, 0], centroids_umap[lbl, 1],
+               marker='*', s=300, c=[colors_km(i)],
+               edgecolors='black', linewidths=0.8, zorder=10)
+ax.set_title(f'K-Means (k={best_k_km}, тШЕ тАФ ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤)',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 3: Fuzzy c-means тФАтФА
+ax = axes[1, 0]
+unique_fcm = sorted(set(fcm_labels_best))
+colors_fcm = plt.cm.get_cmap(PALETTE, len(unique_fcm))
+for i, lbl in enumerate(unique_fcm):
+    mask = fcm_labels_best == lbl
+    ax.scatter(X_umap[mask, 0], X_umap[mask, 1],
+               c=[colors_fcm(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'Fuzzy c-means (c={best_c_fcm})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 4: DBSCAN тФАтФА
+ax = axes[1, 1]
+unique_db = sorted(set(db_labels_best))
+db_cluster_labels = [l for l in unique_db if l != -1]
+colors_db = plt.cm.get_cmap(PALETTE, max(len(db_cluster_labels), 1))
+for i, lbl in enumerate(db_cluster_labels):
+    mask = db_labels_best == lbl
+    ax.scatter(X_umap[mask, 0], X_umap[mask, 1],
+               c=[colors_db(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+if -1 in unique_db:
+    mask_noise = db_labels_best == -1
+    ax.scatter(X_umap[mask_noise, 0], X_umap[mask_noise, 1],
+               c='black', s=20, alpha=0.5, marker='x', label='╨и╤Г╨╝ (тИТ1)')
+ax.set_title(f'DBSCAN (eps={best_eps}, min_samples={best_min_s})\n'
+             f'╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╛╨▓: {n_db_clusters}, ├Ч тАФ ╤И╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('UMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('viz_umap.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П UMAP ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨▓ viz_umap.png')
+
+=== Cell 35 code ===
+# ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ TriMAP
+print('╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ TriMAP...')
+trimap_model = trimap.TRIMAP(n_dims=2, n_random=10, n_inliers=10)
+X_trimap = trimap_model.fit_transform(X_scaled)
+print(f'TriMAP ╨╖╨░╨▓╨╡╤А╤И╤С╨╜: ╤Д╨╛╤А╨╝╨░ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ {X_trimap.shape}')
+
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+fig.suptitle('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨╝╨╡╤В╨╛╨┤╨╛╨╝ TriMAP',
+             fontsize=16, fontweight='bold', y=1.01)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 1: ╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П тФАтФА
+ax = axes[0, 0]
+unique_hier = sorted(set(hier_labels))
+colors_hier = plt.cm.get_cmap(PALETTE, len(unique_hier))
+for i, lbl in enumerate(unique_hier):
+    mask = hier_labels == lbl
+    ax.scatter(X_trimap[mask, 0], X_trimap[mask, 1],
+               c=[colors_hier(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П\n(linkage={BEST_LINKAGE}, k={BEST_K_HIER})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 2: K-Means тФАтФА
+ax = axes[0, 1]
+unique_km = sorted(set(km_labels_best))
+colors_km = plt.cm.get_cmap(PALETTE, len(unique_km))
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    ax.scatter(X_trimap[mask, 0], X_trimap[mask, 1],
+               c=[colors_km(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+# ╨ж╨╡╨╜╤В╤А╨╛╨╕╨┤╤Л ╨▓ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨╡ TriMAP тАФ ╤Б╤А╨╡╨┤╨╜╨╡╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤В╨╛╤З╨╡╨║ ╨║╨╗╨░╤Б╤В╨╡╤А╨░ ╨▓ 2D
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    cx = X_trimap[mask, 0].mean()
+    cy = X_trimap[mask, 1].mean()
+    ax.scatter(cx, cy, marker='*', s=300, c=[colors_km(i)],
+               edgecolors='black', linewidths=0.8, zorder=10)
+ax.set_title(f'K-Means (k={best_k_km}, тШЕ тАФ ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤)',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 3: Fuzzy c-means тФАтФА
+ax = axes[1, 0]
+unique_fcm = sorted(set(fcm_labels_best))
+colors_fcm = plt.cm.get_cmap(PALETTE, len(unique_fcm))
+for i, lbl in enumerate(unique_fcm):
+    mask = fcm_labels_best == lbl
+    ax.scatter(X_trimap[mask, 0], X_trimap[mask, 1],
+               c=[colors_fcm(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'Fuzzy c-means (c={best_c_fcm})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 4: DBSCAN тФАтФА
+ax = axes[1, 1]
+unique_db = sorted(set(db_labels_best))
+db_cluster_labels = [l for l in unique_db if l != -1]
+colors_db = plt.cm.get_cmap(PALETTE, max(len(db_cluster_labels), 1))
+for i, lbl in enumerate(db_cluster_labels):
+    mask = db_labels_best == lbl
+    ax.scatter(X_trimap[mask, 0], X_trimap[mask, 1],
+               c=[colors_db(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+if -1 in unique_db:
+    mask_noise = db_labels_best == -1
+    ax.scatter(X_trimap[mask_noise, 0], X_trimap[mask_noise, 1],
+               c='black', s=20, alpha=0.5, marker='x', label='╨и╤Г╨╝ (тИТ1)')
+ax.set_title(f'DBSCAN (eps={best_eps}, min_samples={best_min_s})\n'
+             f'╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╛╨▓: {n_db_clusters}, ├Ч тАФ ╤И╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('TriMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('viz_trimap.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П TriMAP ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨▓ viz_trimap.png')
+
+=== Cell 36 code ===
+# ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ PaCMAP
+print('╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ PaCMAP (n_neighbors=10)...')
+pacmap_model = pacmap.PaCMAP(n_components=2, n_neighbors=10, random_state=RANDOM_STATE)
+X_pacmap = pacmap_model.fit_transform(X_scaled.copy())
+print(f'PaCMAP ╨╖╨░╨▓╨╡╤А╤И╤С╨╜: ╤Д╨╛╤А╨╝╨░ ╨┐╤А╨╛╨╡╨║╤Ж╨╕╨╕ {X_pacmap.shape}')
+
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+fig.suptitle('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨╝╨╡╤В╨╛╨┤╨╛╨╝ PaCMAP',
+             fontsize=16, fontweight='bold', y=1.01)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 1: ╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П тФАтФА
+ax = axes[0, 0]
+unique_hier = sorted(set(hier_labels))
+colors_hier = plt.cm.get_cmap(PALETTE, len(unique_hier))
+for i, lbl in enumerate(unique_hier):
+    mask = hier_labels == lbl
+    ax.scatter(X_pacmap[mask, 0], X_pacmap[mask, 1],
+               c=[colors_hier(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П\n(linkage={BEST_LINKAGE}, k={BEST_K_HIER})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 2: K-Means тФАтФА
+ax = axes[0, 1]
+unique_km = sorted(set(km_labels_best))
+colors_km = plt.cm.get_cmap(PALETTE, len(unique_km))
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    ax.scatter(X_pacmap[mask, 0], X_pacmap[mask, 1],
+               c=[colors_km(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+# ╨ж╨╡╨╜╤В╤А╨╛╨╕╨┤╤Л ╨▓ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨╡ PaCMAP тАФ ╤Б╤А╨╡╨┤╨╜╨╡╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤В╨╛╤З╨╡╨║ ╨║╨╗╨░╤Б╤В╨╡╤А╨░ ╨▓ 2D
+for i, lbl in enumerate(unique_km):
+    mask = km_labels_best == lbl
+    cx = X_pacmap[mask, 0].mean()
+    cy = X_pacmap[mask, 1].mean()
+    ax.scatter(cx, cy, marker='*', s=300, c=[colors_km(i)],
+               edgecolors='black', linewidths=0.8, zorder=10)
+ax.set_title(f'K-Means (k={best_k_km}, тШЕ тАФ ╤Ж╨╡╨╜╤В╤А╨╛╨╕╨┤)',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 3: Fuzzy c-means тФАтФА
+ax = axes[1, 0]
+unique_fcm = sorted(set(fcm_labels_best))
+colors_fcm = plt.cm.get_cmap(PALETTE, len(unique_fcm))
+for i, lbl in enumerate(unique_fcm):
+    mask = fcm_labels_best == lbl
+    ax.scatter(X_pacmap[mask, 0], X_pacmap[mask, 1],
+               c=[colors_fcm(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+ax.set_title(f'Fuzzy c-means (c={best_c_fcm})',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+# тФАтФА ╨Я╨╛╨┤╨│╤А╨░╤Д╨╕╨║ 4: DBSCAN тФАтФА
+ax = axes[1, 1]
+unique_db = sorted(set(db_labels_best))
+db_cluster_labels = [l for l in unique_db if l != -1]
+colors_db = plt.cm.get_cmap(PALETTE, max(len(db_cluster_labels), 1))
+for i, lbl in enumerate(db_cluster_labels):
+    mask = db_labels_best == lbl
+    ax.scatter(X_pacmap[mask, 0], X_pacmap[mask, 1],
+               c=[colors_db(i)], s=15, alpha=0.7, label=f'╨Ъ╨╗╨░╤Б╤В╨╡╤А {lbl}')
+if -1 in unique_db:
+    mask_noise = db_labels_best == -1
+    ax.scatter(X_pacmap[mask_noise, 0], X_pacmap[mask_noise, 1],
+               c='black', s=20, alpha=0.5, marker='x', label='╨и╤Г╨╝ (тИТ1)')
+ax.set_title(f'DBSCAN (eps={best_eps}, min_samples={best_min_s})\n'
+             f'╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╛╨▓: {n_db_clusters}, ├Ч тАФ ╤И╤Г╨╝╨╛╨▓╤Л╨╡ ╤В╨╛╤З╨║╨╕',
+             fontsize=12, fontweight='bold')
+ax.set_xlabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 1', fontsize=10)
+ax.set_ylabel('PaCMAP ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╨░ 2', fontsize=10)
+ax.legend(fontsize=8, markerscale=2, loc='best')
+ax.grid(alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('viz_pacmap.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П PaCMAP ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨▓ viz_pacmap.png')
+
+=== Cell 38 code ===
+# ╨Я╨╛╨▓╤В╨╛╤А╨╜╨╛╨╡ ╨╛╨▒╤Г╤З╨╡╨╜╨╕╨╡ ╨╗╤Г╤З╤И╨╕╤Е ╨╝╨╛╨┤╨╡╨╗╨╡╨╣ ╤Б ╨╖╨░╨╝╨╡╤А╨╛╨╝ ╨▓╤А╨╡╨╝╨╡╨╜╨╕
+
+# ╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П
+t0 = time.time()
+AgglomerativeClustering(n_clusters=BEST_K_HIER, linkage=BEST_LINKAGE).fit_predict(X_scaled)
+t_hier = round(time.time() - t0, 4)
+
+# K-Means
+t0 = time.time()
+KMeans(n_clusters=best_k_km, init='k-means++', n_init=10,
+       max_iter=300, random_state=RANDOM_STATE).fit_predict(X_scaled)
+t_km = round(time.time() - t0, 4)
+
+# Fuzzy c-means
+t0 = time.time()
+fuzz.cluster.cmeans(X_scaled.T, c=best_c_fcm, m=FCM_M,
+                    error=1e-6, maxiter=1000, seed=RANDOM_STATE)
+t_fcm = round(time.time() - t0, 4)
+
+# DBSCAN
+t0 = time.time()
+DBSCAN(eps=best_eps, min_samples=best_min_s).fit_predict(X_scaled)
+t_dbscan = round(time.time() - t0, 4)
+
+# ╨Я╨╛╨╗╤Г╤З╨╡╨╜╨╕╨╡ ╨╝╨╡╤В╤А╨╕╨║ ╨║╨░╤З╨╡╤Б╤В╨▓╨░ ╨╕╨╖ ╤А╨░╨╜╨╡╨╡ ╨▓╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╜╤Л╤Е ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╤Л╤Е
+sil_hier = round(best_sil, 4)
+ari_hier = round(best_ari, 4)
+
+sil_km = round(best_sil_km, 4)
+ari_km = round(float(df_kmeans.loc[best_sil_km_idx, 'ARI']), 4)
+
+sil_fcm = round(best_sil_fcm, 4)
+ari_fcm = round(float(df_fcm.loc[best_fcm_idx, 'ARI']), 4)
+
+n_db = int(best_dbscan_row['n_clusters'])
+sil_dbscan = round(float(best_dbscan_row['Silhouette']), 4)
+ari_dbscan = round(float(best_dbscan_row['ARI']), 4)
+
+# ╨д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╨╡ ╤Б╨▓╨╛╨┤╨╜╨╛╨╣ ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╤Б╤А╨░╨▓╨╜╨╡╨╜╨╕╤П
+comparison_data = [
+    {
+        '╨Р╨╗╨│╨╛╤А╨╕╤В╨╝': f'╨Ш╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П (linkage={BEST_LINKAGE})',
+        '╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓': BEST_K_HIER,
+        'Silhouette': sil_hier,
+        'ARI': ari_hier,
+        '╨Т╤А╨╡╨╝╤П ╨╛╨▒╤Г╤З╨╡╨╜╨╕╤П (╤Б)': t_hier
+    },
+    {
+        '╨Р╨╗╨│╨╛╤А╨╕╤В╨╝': 'K-Means',
+        '╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓': best_k_km,
+        'Silhouette': sil_km,
+        'ARI': ari_km,
+        '╨Т╤А╨╡╨╝╤П ╨╛╨▒╤Г╤З╨╡╨╜╨╕╤П (╤Б)': t_km
+    },
+    {
+        '╨Р╨╗╨│╨╛╤А╨╕╤В╨╝': 'Fuzzy c-means',
+        '╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓': best_c_fcm,
+        'Silhouette': sil_fcm,
+        'ARI': ari_fcm,
+        '╨Т╤А╨╡╨╝╤П ╨╛╨▒╤Г╤З╨╡╨╜╨╕╤П (╤Б)': t_fcm
+    },
+    {
+        '╨Р╨╗╨│╨╛╤А╨╕╤В╨╝': f'DBSCAN (eps={best_eps}, min_s={best_min_s})',
+        '╨Ю╨┐╤В╨╕╨╝╨░╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓': n_db,
+        'Silhouette': sil_dbscan,
+        'ARI': ari_dbscan,
+        '╨Т╤А╨╡╨╝╤П ╨╛╨▒╤Г╤З╨╡╨╜╨╕╤П (╤Б)': t_dbscan
+    }
+]
+
+# ╨б╨╛╤А╤В╨╕╤А╨╛╨▓╨║╨░ ╨┐╨╛ ╤Г╨▒╤Л╨▓╨░╨╜╨╕╤О ╨╕╨╜╨┤╨╡╨║╤Б╨░ ╤Б╨╕╨╗╤Г╤Н╤В╨░
+df_comparison = pd.DataFrame(comparison_data).sort_values('Silhouette', ascending=False)
+df_comparison = df_comparison.reset_index(drop=True)
+df_comparison.index = df_comparison.index + 1
+
+print('╨б╨▓╨╛╨┤╨╜╨░╤П ╤В╨░╨▒╨╗╨╕╤Ж╨░ ╤Б╤А╨░╨▓╨╜╨╡╨╜╨╕╤П ╨░╨╗╨│╨╛╤А╨╕╤В╨╝╨╛╨▓ ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ (╤Б╨╛╤А╤В╨╕╤А╨╛╨▓╨║╨░ ╨┐╨╛ Silhouette):')
+display(df_comparison)
+
+=== Cell 39 code ===
+# ╨Я╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨░ ╨┤╨░╨╜╨╜╤Л╤Е ╨┤╨╗╤П ╤Б╤В╨╛╨╗╨▒╤З╨░╤В╤Л╤Е ╨┤╨╕╨░╨│╤А╨░╨╝╨╝
+algo_names = ['╨Ш╨╡╤А╨░╤А╤Е.', 'K-Means', 'FCM', 'DBSCAN']
+sil_values = [sil_hier, sil_km, sil_fcm, sil_dbscan]
+ari_values = [ari_hier, ari_km, ari_fcm, ari_dbscan]
+
+# ╨ж╨▓╨╡╤В╨░ ╤Б╤В╨╛╨╗╨▒╤Ж╨╛╨▓
+bar_colors = ['#1f77b4', '#2ca02c', '#9467bd', '#d62728']
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+fig.suptitle('╨б╤А╨░╨▓╨╜╨╡╨╜╨╕╨╡ ╨░╨╗╨│╨╛╤А╨╕╤В╨╝╨╛╨▓ ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨┐╨╛ ╨╝╨╡╤В╤А╨╕╨║╨░╨╝ ╨║╨░╤З╨╡╤Б╤В╨▓╨░',
+             fontsize=14, fontweight='bold')
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 1: Silhouette Score тФАтФА
+ax1 = axes[0]
+bars1 = ax1.bar(algo_names, sil_values, color=bar_colors,
+                edgecolor='black', linewidth=0.8, width=0.55)
+# ╨Я╨╛╨┤╨┐╨╕╤Б╨╕ ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╣ ╨╜╨░╨┤ ╤Б╤В╨╛╨╗╨▒╤Ж╨░╨╝╨╕
+for bar, val in zip(bars1, sil_values):
+    ax1.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.003,
+             f'{val:.4f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+ax1.set_title('Silhouette Score', fontsize=13, fontweight='bold')
+ax1.set_ylabel('╨Ч╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨╕╨╜╨┤╨╡╨║╤Б╨░ ╤Б╨╕╨╗╤Г╤Н╤В╨░', fontsize=11)
+ax1.set_xlabel('╨Р╨╗╨│╨╛╤А╨╕╤В╨╝', fontsize=11)
+ax1.set_ylim(0, max(sil_values) * 1.2)
+ax1.grid(axis='y', alpha=0.4)
+ax1.axhline(y=0, color='black', linewidth=0.8)
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 2: ARI тФАтФА
+ax2 = axes[1]
+bars2 = ax2.bar(algo_names, ari_values, color=bar_colors,
+                edgecolor='black', linewidth=0.8, width=0.55)
+# ╨Я╨╛╨┤╨┐╨╕╤Б╨╕ ╨╖╨╜╨░╤З╨╡╨╜╨╕╨╣ ╨╜╨░╨┤/╨┐╨╛╨┤ ╤Б╤В╨╛╨╗╨▒╤Ж╨░╨╝╨╕
+for bar, val in zip(bars2, ari_values):
+    offset = 0.003 if val >= 0 else -0.015
+    va = 'bottom' if val >= 0 else 'top'
+    ax2.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + offset,
+             f'{val:.4f}', ha='center', va=va, fontsize=11, fontweight='bold')
+ax2.set_title('Adjusted Rand Index (ARI)', fontsize=13, fontweight='bold')
+ax2.set_ylabel('╨Ч╨╜╨░╤З╨╡╨╜╨╕╨╡ ARI', fontsize=11)
+ax2.set_xlabel('╨Р╨╗╨│╨╛╤А╨╕╤В╨╝', fontsize=11)
+y_min = min(0, min(ari_values) * 1.3)
+y_max = max(ari_values) * 1.3 if max(ari_values) > 0 else 0.1
+ax2.set_ylim(y_min, y_max)
+ax2.grid(axis='y', alpha=0.4)
+ax2.axhline(y=0, color='black', linewidth=0.8)
+
+plt.tight_layout()
+plt.savefig('viz_comparison_bars.png', dpi=150, bbox_inches='tight')
+plt.show()
+print('╨Ф╨╕╨░╨│╤А╨░╨╝╨╝╤Л ╤Б╤А╨░╨▓╨╜╨╡╨╜╨╕╤П ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╤Л ╨▓ viz_comparison_bars.png')
+

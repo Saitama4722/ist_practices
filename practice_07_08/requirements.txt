@@ -1,0 +1,9 @@
+scikit-learn
+imbalanced-learn
+umap-learn
+trimap
+pacmap
+pandas
+numpy
+matplotlib
+seaborn

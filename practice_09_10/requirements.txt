@@ -1,0 +1,9 @@
+geneticalgorithm
+pyswarm
+scipy
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+bees-algorithm

@@ -1,0 +1,24 @@
+# Consolidated dependencies for all research modules (install as needed per notebook)
+apriori-python
+bees-algorithm
+efficient-apriori
+fpgrowth-py
+geneticalgorithm
+graphviz
+imbalanced-learn
+keras
+matplotlib
+mlxtend
+networkx
+numpy
+pacmap
+pandas
+pyarmviz
+pyswarm
+scikit-fuzzy
+scikit-learn
+scipy
+seaborn
+tensorflow
+trimap
+umap-learn

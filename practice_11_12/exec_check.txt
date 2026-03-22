@@ -1,0 +1,4 @@
+  File "<string>", line 19
+    print(f'Cell {i+1} ({cell[\
+          ^
+SyntaxError: unterminated string literal (detected at line 19)

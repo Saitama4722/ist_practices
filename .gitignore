@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary / local scripts
+build_report*.py
+clean_comments.py
+add_cells*.py
+count_cells.py
+verify*.py
+check*.py
+fix_*.py
+_*.py
+
+# Data
+australian.dat
+*.dat
+
+# Documentation (local / large)
+docs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/

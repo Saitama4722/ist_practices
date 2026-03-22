@@ -1,0 +1,141 @@
+=== Cell 15 code ===
+# ╨б╨┐╨╕╤Б╨╛╨║ ╨╕╤Б╤Б╨╗╨╡╨┤╤Г╨╡╨╝╤Л╤Е ╨╝╨╡╤В╨╛╨┤╨╛╨▓ ╤Б╨▓╤П╨╖╨╕
+LINKAGE_METHODS = ['ward', 'complete', 'average', 'single']
+
+# ╨Ф╨╕╨░╨┐╨░╨╖╨╛╨╜ ╤З╨╕╤Б╨╗╨░ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓
+K_RANGE = range(2, 11)
+
+# ╨б╨┐╨╕╤Б╨╛╨║ ╨┤╨╗╤П ╤Е╤А╨░╨╜╨╡╨╜╨╕╤П ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓
+hier_results = []
+
+print('╨Я╨╡╤А╨╡╨▒╨╛╤А ╨╝╨╡╤В╨╛╨┤╨╛╨▓ ╤Б╨▓╤П╨╖╨╕ ╨╕ ╤З╨╕╤Б╨╗╨░ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓...')
+header = f"{'╨Ь╨╡╤В╨╛╨┤':<12} {'k':<5} {'Silhouette':<14} {'ARI':<10}"
+print(header)
+print('-' * 44)
+
+for method in LINKAGE_METHODS:
+    for k in K_RANGE:
+        # ╨Р╨│╨╗╨╛╨╝╨╡╤А╨░╤В╨╕╨▓╨╜╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П ╤Б ╨╖╨░╨┤╨░╨╜╨╜╤Л╨╝ ╨╝╨╡╤В╨╛╨┤╨╛╨╝ ╤Б╨▓╤П╨╖╨╕ ╨╕ ╤З╨╕╤Б╨╗╨╛╨╝ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓
+        agg = AgglomerativeClustering(n_clusters=k, linkage=method)
+        labels = agg.fit_predict(X_scaled)
+
+        # ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨╕╨╜╨┤╨╡╨║╤Б╨░ ╤Б╨╕╨╗╤Г╤Н╤В╨░ (╨▓╨╜╤Г╤В╤А╨╡╨╜╨╜╤П╤П ╨╝╨╡╤В╤А╨╕╨║╨░)
+        sil = silhouette_score(X_scaled, labels)
+
+        # ╨Т╤Л╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ARI (╨▓╨╜╨╡╤И╨╜╤П╤П ╨╝╨╡╤В╤А╨╕╨║╨░, ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В y_true ╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╨║╨╛╨╜╤В╤А╨╛╨╗╤П)
+        ari = adjusted_rand_score(y_true, labels)
+
+        hier_results.append({
+            '╨Ь╨╡╤В╨╛╨┤': method,
+            'k': k,
+            'Silhouette': round(sil, 4),
+            'ARI': round(ari, 4)
+        })
+        print(f'{method:<12} {k:<5} {sil:<14.4f} {ari:<10.4f}')
+
+# ╨Я╤А╨╡╨╛╨▒╤А╨░╨╖╨╛╨▓╨░╨╜╨╕╨╡ ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓ ╨▓ DataFrame
+df_hier_results = pd.DataFrame(hier_results)
+
+# ╨Т╤Л╨▓╨╛╨┤ ╤В╨╛╨┐-10 ╤А╨╡╨╖╤Г╨╗╤М╤В╨░╤В╨╛╨▓ ╨┐╨╛ ╤Г╨▒╤Л╨▓╨░╨╜╨╕╤О Silhouette
+print('\n╨в╨╛╨┐-10 ╨║╨╛╨╝╨▒╨╕╨╜╨░╤Ж╨╕╨╣ ╨┐╨╛ ╨╕╨╜╨┤╨╡╨║╤Б╤Г ╤Б╨╕╨╗╤Г╤Н╤В╨░:')
+display(df_hier_results.sort_values('Silhouette', ascending=False).head(10).reset_index(drop=True))
+
+=== Cell 16 code ===
+# ╨ж╨▓╨╡╤В╨╛╨▓╨░╤П ╨┐╨░╨╗╨╕╤В╤А╨░ ╨┤╨╗╤П ╨╝╨╡╤В╨╛╨┤╨╛╨▓ ╤Б╨▓╤П╨╖╨╕
+method_colors = {'ward': '#1f77b4', 'complete': '#ff7f0e', 'average': '#2ca02c', 'single': '#d62728'}
+method_labels = {'ward': 'Ward', 'complete': 'Complete', 'average': 'Average', 'single': 'Single'}
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 1: Silhouette Score vs k тФАтФА
+ax1 = axes[0]
+for method in LINKAGE_METHODS:
+    subset = df_hier_results[df_hier_results['╨Ь╨╡╤В╨╛╨┤'] == method].sort_values('k')
+    ax1.plot(subset['k'], subset['Silhouette'],
+             marker='o', linewidth=2, markersize=7,
+             color=method_colors[method], label=method_labels[method])
+
+ax1.set_title('╨Ш╨╜╨┤╨╡╨║╤Б ╤Б╨╕╨╗╤Г╤Н╤В╨░ vs. ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓', fontsize=13, fontweight='bold')
+ax1.set_xlabel('╨з╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ k', fontsize=11)
+ax1.set_ylabel('Silhouette Score', fontsize=11)
+ax1.set_xticks(list(K_RANGE))
+ax1.legend(title='╨Ь╨╡╤В╨╛╨┤ ╤Б╨▓╤П╨╖╨╕', fontsize=10)
+ax1.grid(alpha=0.4)
+
+# тФАтФА ╨У╤А╨░╤Д╨╕╨║ 2: ARI vs k тФАтФА
+ax2 = axes[1]
+for method in LINKAGE_METHODS:
+    subset = df_hier_results[df_hier_results['╨Ь╨╡╤В╨╛╨┤'] == method].sort_values('k')
+    ax2.plot(subset['k'], subset['ARI'],
+             marker='s', linewidth=2, markersize=7,
+             color=method_colors[method], label=method_labels[method])
+
+ax2.set_title('ARI vs. ╤З╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓', fontsize=13, fontweight='bold')
+ax2.set_xlabel('╨з╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ k', fontsize=11)
+ax2.set_ylabel('Adjusted Rand Index (ARI)', fontsize=11)
+ax2.set_xticks(list(K_RANGE))
+ax2.legend(title='╨Ь╨╡╤В╨╛╨┤ ╤Б╨▓╤П╨╖╨╕', fontsize=10)
+ax2.grid(alpha=0.4)
+
+plt.suptitle('╨Ю╤Ж╨╡╨╜╨║╨░ ╨║╨░╤З╨╡╤Б╤В╨▓╨░ ╨╕╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨╛╨╣ ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╨╕', fontsize=14, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.savefig('hier_metrics.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# ╨Ю╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨╕╨╡ ╨╗╤Г╤З╤И╨╡╨╣ ╨║╨╛╨╝╨▒╨╕╨╜╨░╤Ж╨╕╨╕ ╨┐╨╛ ╨╕╨╜╨┤╨╡╨║╤Б╤Г ╤Б╨╕╨╗╤Г╤Н╤В╨░
+best_row = df_hier_results.loc[df_hier_results['Silhouette'].idxmax()]
+BEST_LINKAGE = best_row['╨Ь╨╡╤В╨╛╨┤']
+BEST_K_HIER = int(best_row['k'])
+
+print(f'╨Э╨░╨╕╨╗╤Г╤З╤И╨░╤П ╨║╨╛╨╝╨▒╨╕╨╜╨░╤Ж╨╕╤П ╨┐╨╛ Silhouette Score:')
+print(f'  ╨Ь╨╡╤В╨╛╨┤ ╤Б╨▓╤П╨╖╨╕:      {BEST_LINKAGE}')
+print(f'  ╨з╨╕╤Б╨╗╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓:  {BEST_K_HIER}')
+print(f'  Silhouette Score: {best_row["Silhouette"]:.4f}')
+print(f'  ARI:              {best_row["ARI"]:.4f}')
+
+=== Cell 17 code ===
+# ╨Ю╨▒╤Г╤З╨╡╨╜╨╕╨╡ ╨╗╤Г╤З╤И╨╡╨╣ ╨╕╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨╛╨╣ ╨╝╨╛╨┤╨╡╨╗╨╕
+best_hier = AgglomerativeClustering(n_clusters=BEST_K_HIER, linkage=BEST_LINKAGE)
+hier_labels = best_hier.fit_predict(X_scaled)
+
+# ╨а╨░╨╖╨╝╨╡╤А╤Л ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓
+cluster_counts = pd.Series(hier_labels).value_counts().sort_index()
+print(f'╨Я╨░╤А╨░╨╝╨╡╤В╤А╤Л ╨╗╤Г╤З╤И╨╡╨╣ ╨╝╨╛╨┤╨╡╨╗╨╕: linkage={BEST_LINKAGE}, n_clusters={BEST_K_HIER}')
+print('\n╨а╨░╤Б╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨╕╨╡ ╨╛╨▒╤К╨╡╨║╤В╨╛╨▓ ╨┐╨╛ ╨║╨╗╨░╤Б╤В╨╡╤А╨░╨╝:')
+for cluster_id, count in cluster_counts.items():
+    print(f'  ╨Ъ╨╗╨░╤Б╤В╨╡╤А {cluster_id}: {count} ╨╛╨▒╤К╨╡╨║╤В╨╛╨▓ ({count/len(hier_labels)*100:.1f}%)')
+
+# ╨Ь╨░╤В╤А╨╕╤Ж╨░ ╤Б╨╛╨╛╤В╨▓╨╡╤В╤Б╤В╨▓╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ ╨╕ ╨╕╤Б╤В╨╕╨╜╨╜╤Л╤Е ╨╝╨╡╤В╨╛╨║
+conf_df = pd.crosstab(
+    pd.Series(hier_labels, name='╨Ъ╨╗╨░╤Б╤В╨╡╤А'),
+    pd.Series(y_true, name='╨Ш╤Б╤В╨╕╨╜╨╜╤Л╨╣ ╨║╨╗╨░╤Б╤Б')
+)
+print('\n╨Ь╨░╤В╤А╨╕╤Ж╨░ ╤Б╨╛╨╛╤В╨▓╨╡╤В╤Б╤В╨▓╨╕╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╛╨▓ ╨╕ ╨╕╤Б╤В╨╕╨╜╨╜╤Л╤Е ╨╝╨╡╤В╨╛╨║:')
+display(conf_df)
+
+# ╨Т╨╕╨╖╤Г╨░╨╗╨╕╨╖╨░╤Ж╨╕╤П ╨╝╨░╤В╤А╨╕╤Ж╤Л ╤Б╨╛╨╛╤В╨▓╨╡╤В╤Б╤В╨▓╨╕╤П ╨▓ ╨▓╨╕╨┤╨╡ ╤В╨╡╨┐╨╗╨╛╨▓╨╛╨╣ ╨║╨░╤А╤В╤Л
+fig, ax = plt.subplots(figsize=(8, max(4, BEST_K_HIER)))
+sns.heatmap(
+    conf_df,
+    annot=True, fmt='d', cmap='YlOrRd',
+    linewidths=0.5, linecolor='gray',
+    ax=ax
+)
+ax.set_title(
+    f'╨Ь╨░╤В╤А╨╕╤Ж╨░ ╤Б╨╛╨╛╤В╨▓╨╡╤В╤Б╤В╨▓╨╕╤П: ╨╕╨╡╤А╨░╤А╤Е╨╕╤З╨╡╤Б╨║╨░╤П ╨║╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤П\n'
+    f'(linkage={BEST_LINKAGE}, k={BEST_K_HIER})',
+    fontsize=13, fontweight='bold'
+)
+ax.set_xlabel('╨Ш╤Б╤В╨╕╨╜╨╜╤Л╨╣ ╨║╨╗╨░╤Б╤Б (0 тАФ ╨╛╤В╨║╨░╨╖, 1 тАФ ╨╛╨┤╨╛╨▒╤А╨╡╨╜╨╕╨╡)', fontsize=11)
+ax.set_ylabel('╨Э╨╛╨╝╨╡╤А ╨║╨╗╨░╤Б╤В╨╡╤А╨░', fontsize=11)
+plt.tight_layout()
+plt.savefig('hier_confusion.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# ╨Ш╤В╨╛╨│╨╛╨▓╤Л╨╡ ╨╝╨╡╤В╤А╨╕╨║╨╕ ╨╗╤Г╤З╤И╨╡╨╣ ╨╝╨╛╨┤╨╡╨╗╨╕
+best_sil = silhouette_score(X_scaled, hier_labels)
+best_ari = adjusted_rand_score(y_true, hier_labels)
+print(f'\n╨Ш╤В╨╛╨│╨╛╨▓╤Л╨╡ ╨╝╨╡╤В╤А╨╕╨║╨╕ ╨╗╤Г╤З╤И╨╡╨╣ ╨╝╨╛╨┤╨╡╨╗╨╕:')
+print(f'  Silhouette Score: {best_sil:.4f}')
+print(f'  ARI:              {best_ari:.4f}')
+

@@ -1,0 +1,9 @@
+apriori-python
+efficient-apriori
+fpgrowth-py
+pyarmviz
+pandas
+matplotlib
+seaborn
+mlxtend
+networkx
